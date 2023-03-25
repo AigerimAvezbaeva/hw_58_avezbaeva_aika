@@ -1,0 +1,34 @@
+1.python3 manage.py shell
+from django.utils import timezone
+from datetime import timedelta
+from tracker_app.models import Issue
+last_month = timezone.now() - timedelta(days=30)
+closed_tasks = Issue.objects.filter(status='4', updated_at__gte=last_month)
+closed_tasks
+<QuerySet [<Issue: Issue object (2)>, <Issue: Issue object (1)>, <Issue: Issue object (4)>, <Issue: Issue object (5)>]>
+
+2.from tracker_app.models import Issue
+tasks = Issue.objects.filter(status__in=(1,2,3), type__in=(1,2))
+tasks
+<QuerySet [<Issue: Issue object (3)>]>
+
+3.
+>>> tasks = Issue.objects.filter(Q(summary__icontains='bug') | Q(type=1), ~Q(status=4))
+>>> tasks
+<QuerySet [<Issue: Issue object (3)>]>
+
+BONUS
+1.
+>>> tasks = Issue.objects.all().values('id', 'summary', 'type__name', 'status__name')
+>>> tasks
+<QuerySet [{'id': 2, 'summary': 'назначить созвон с группой по \xa0JS', 'type__name': 'task', 'status__name': 'done'}, {'id': 3, 'summary': 'починить отображение возврата в кабинете', 'type__name': 'bug', 'status__name': 'in progress'}, {'id': 1, 'summary': 'провести планерку', 'type__name': 'task', 'status__name': 'done'}, {'id': 1, 'summary': 'провести планерку', 'type__name': 'enhancement', 'status__name': 'done'}, {'id': 4, 'summary': 'поменять кнопку', 'type__name': 'enhancement', 'status__name': 'done'}, {'id': 5, 'summary': 'провести дейлик', 'type__name': 'task', 'status__name': 'done'}]>
+2.
+>>> from django.db.models import F
+>>> tasks = Issue.objects.filter(summary=F('description'))
+>>> tasks
+<QuerySet []>
+3.
+>>> from django.db.models import Count
+>>> tasks_by_type = Issue.objects.values('type__name').annotate(num_tasks=Count('id'))
+>>> tasks_by_type
+<QuerySet [{'type__name': 'bug', 'num_tasks': 1}, {'type__name': 'task', 'num_tasks': 3}, {'type__name': 'enhancement', 'num_tasks': 2}]>
